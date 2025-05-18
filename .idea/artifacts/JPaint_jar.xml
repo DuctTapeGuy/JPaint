@@ -1,0 +1,8 @@
+<component name="ArtifactManager">
+  <artifact type="jar" build-on-make="true" name="JPaint:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/JPaint_jar</output-path>
+    <root id="archive" name="JPaint.jar">
+      <element id="module-output" name="JPaint" />
+    </root>
+  </artifact>
+</component>
