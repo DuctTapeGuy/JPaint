@@ -11,6 +11,7 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.TimerTask;
 
 import static java.lang.Math.abs;
 
@@ -25,6 +26,8 @@ public class MainFrame extends JFrame {
     private String pickedShape = "Rectangle";
 
     public List<Drawable> tvary = new ArrayList<>();
+    public List<Dot> dots = new ArrayList<>();
+
 
 
     public MainFrame(Drawable example) {
@@ -49,17 +52,24 @@ public class MainFrame extends JFrame {
         JLabel test1Label = new JLabel("tvary?");
         rightPanel.add(test1Label);
 
-        JPanel rightModePanel = new JPanel(new GridLayout(2, 2));
+        JPanel rightModePanel = new JPanel(new GridLayout(3, 2));
         rightModePanel.setPreferredSize(new Dimension(220, 220));
         JButton btnRectangle = new JButton("obdelnik");
         JButton btnOval = new JButton("kolecko");
         JButton btnTriangle = new JButton("trojuhelnik");
-        JButton test4 = new JButton("Test4");
+        JButton btnLine = new JButton("cara");
+        JButton btnText = new JButton("text");
+        JButton btnFree = new JButton("free");
         rightModePanel.add(btnRectangle);
         rightModePanel.add(btnOval);
         rightModePanel.add(btnTriangle);
-        rightModePanel.add(test4);
+        rightModePanel.add(btnLine);
+        rightModePanel.add(btnText);
+        rightModePanel.add(btnFree);
+        JTextArea textArea = new JTextArea(5, 15);
+        textArea.setPreferredSize(new Dimension(220, 20));
         rightPanel.add(rightModePanel);
+        rightPanel.add(textArea);
 
 
         JLabel test2Label = new JLabel("Barvicky");
@@ -77,6 +87,16 @@ public class MainFrame extends JFrame {
         rightPanel.add(rightColorPanel);
         JLabel test3Label = new JLabel("Veci?");
         rightPanel.add(test3Label);
+
+        DefaultListModel<String> listModel = new DefaultListModel<>();
+
+        JList utvary = new JList(listModel);
+        JScrollPane utvaryFix = new JScrollPane(utvary);
+        utvary.setSelectionMode(ListSelectionModel.SINGLE_INTERVAL_SELECTION);
+        utvary.setFixedCellHeight(20);
+        utvary.setFixedCellWidth(80);
+        utvary.setVisibleRowCount(8);
+        rightPanel.add(utvaryFix);
 
 
 
@@ -127,12 +147,36 @@ public class MainFrame extends JFrame {
         btnTriangle.addActionListener((e) -> {
             pickedShape = "Triangle";
         });
-
-
+        btnLine.addActionListener((e) -> {
+            pickedShape = "Line";
+        });
+        btnText.addActionListener((e) -> {
+           pickedShape = "Text";
+        });
+        btnFree.addActionListener((e) -> {
+            pickedShape = "Free";
+        });
+        List<Drawable> dotList = new ArrayList<>();
+        List<Group> grouplist = new ArrayList<>();
         drawingPanel.addMouseListener(new MouseAdapter() {
+            private java.util.Timer t;
             public void mousePressed(MouseEvent e) {
                 firstX = e.getX();
                 firstY = e.getY();
+
+                if((t == null)&&(pickedShape.equals("Free"))) {
+                    t = new java.util.Timer();
+                }
+                if (pickedShape.equals("Free")) {
+                    t.schedule(new TimerTask(){
+                        public void run(){
+                            Point mouseLocation = MouseInfo.getPointerInfo().getLocation();
+                            Dot dot = new Dot((int) mouseLocation.getX(), (int) (mouseLocation.getY()-85),pickedColor);
+                            dots.add(dot);
+                        }
+                    },1,3);
+                }
+
             }
             public void mouseReleased(MouseEvent e) {
                 int rohX = 0;
@@ -150,18 +194,39 @@ public class MainFrame extends JFrame {
                 if(pickedShape.equals("Rectangle")) {
                     Rectangle rectangle = new Rectangle(rohX,rohY,abs(lastX-firstX),abs(lastY-firstY),pickedColor);
                     tvary.add(rectangle);
+                    listModel.addElement("obdelnik");
                 } else if(pickedShape.equals("Oval")) {
                     Oval oval = new Oval(rohX,rohY,abs(lastX-firstX),abs(lastY-firstY),pickedColor);
                     tvary.add(oval);
+                    listModel.addElement("oval");
                 } else if(pickedShape.equals("Triangle")) {
-                    //Triangle triangle = new Triangle(roh2X,roh2Y,rohX,rohY,abs(lastX-firstX),abs(lastY-firstY));
                     Triangle triangle = new Triangle(rohX,roh2Y, roh2X, roh2Y, rohX+(abs(lastX-firstX)/2), rohY);
                     triangle.setColorus(pickedColor);
                     tvary.add(triangle);
-
-
+                    listModel.addElement("triangle");
+                } else if(pickedShape.equals("Line")) {
+                    Line line = new Line(firstX,firstY,lastX,lastY);
+                    line.setColorus(pickedColor);
+                    tvary.add(line);
+                    listModel.addElement("line");
+                } else if ((pickedShape.equals("Text"))&&(!textArea.getText().trim().equals(""))) {
+                    DrawableString pismo = new DrawableString(rohX,rohY,15, textArea.getText(),"#000000");
+                    tvary.add(pismo);
+                    listModel.addElement("pismo");
+                } else if (pickedShape.equals("Free")) {
+                    dotList.addAll(dots);
+                    dots.clear();
+                    Group tecky = new Group(dotList,0.0,1.0,1.0);
+                    tvary.add(tecky);
+                    grouplist.add(tecky);
+                    listModel.addElement("drag");
                 }
 
+
+                if(t != null){
+                    t.cancel();
+                    t = null;
+                }
 
                 drawGroup();
             }
